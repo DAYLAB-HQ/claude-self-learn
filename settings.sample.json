@@ -1,0 +1,43 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/session-start-preloader.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/self-learn-stop.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/detect-commit.sh"
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/error-auto-matcher.sh"
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/calibration-tracker.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
