@@ -1,6 +1,6 @@
 ---
 name: self-learn:candidates
-description: "View skill candidates + manual promote/dismiss. Use when user types /self-learn:candidates, 'candidates', 'skill candidates', '스킬 후보', '후보 목록'"
+description: "View skill candidates + manual promote/dismiss. Use when user types /self-learn:candidates, 'candidates', or 'skill candidates'"
 argument-hint: "[promote|dismiss|add] [candidate-id]"
 ---
 

@@ -1,10 +1,11 @@
 #!/bin/bash
-# calibration-tracker.sh — 빌드/명령 실패 시 도메인별 오답 기록
+# calibration-tracker.sh — Track per-domain wrong counts on build/command failure
 #
-# PostToolUse(Bash) 이벤트에서 실행.
-# exit code ≠ 0이면 실패한 도메인을 추정하고 calibration.json에 기록.
-# 성공은 이 hook에서 자동 기록하지 않음 — /self-learn에서 수동 판단.
-# (모든 성공 명령을 기록하면 노이즈가 너무 많음)
+# Runs on PostToolUse(Bash). When a command exits with a non-zero code,
+# infers the domain from the command/stderr and increments `wrong` in
+# calibration.json. Successful commands are NOT auto-recorded here —
+# `/self-learn` makes that call manually (recording every success would be
+# too noisy).
 
 INPUT=$(cat)
 EXIT_CODE=$(echo "$INPUT" | jq -r '.tool_result.exit_code // 0' 2>/dev/null)
@@ -12,17 +13,16 @@ COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null)
 STDERR=$(echo "$INPUT" | jq -r '.tool_result.stderr // empty' 2>/dev/null)
 STDOUT=$(echo "$INPUT" | jq -r '.tool_result.stdout // empty' 2>/dev/null)
 
-# 성공이면 무시
+# Skip successful commands
 [ "$EXIT_CODE" = "0" ] && exit 0
 [ "$EXIT_CODE" = "null" ] && exit 0
 
-# 에러 텍스트
 ERROR_TEXT="$COMMAND $STDERR $STDOUT"
 [ ${#ERROR_TEXT} -lt 20 ] && exit 0
 
 CAL_FILE="$HOME/.claude/self-improvement/calibration.json"
 
-# 도메인 추정
+# Infer the domain from the error text
 DOMAIN=""
 echo "$ERROR_TEXT" | grep -qiE "next|nextjs|next build|next dev" && DOMAIN="nextjs"
 echo "$ERROR_TEXT" | grep -qiE "nest|nestjs|@nestjs" && DOMAIN="nestjs"
@@ -37,14 +37,14 @@ echo "$ERROR_TEXT" | grep -qiE "typescript|tsc|\.ts" && DOMAIN="typescript"
 echo "$ERROR_TEXT" | grep -qiE "pnpm|npm|yarn" && DOMAIN="package_manager"
 echo "$ERROR_TEXT" | grep -qiE "git " && DOMAIN="git"
 
-# 도메인 감지 못하면 무시
+# Skip if no domain could be inferred
 [ -z "$DOMAIN" ] && exit 0
 
-# jq가 있으면 calibration.json 업데이트
+# Update calibration.json if jq is available
 if command -v jq &>/dev/null && [ -f "$CAL_FILE" ]; then
   TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-  # 도메인이 없으면 초기화, 있으면 wrong +1
+  # Initialize domain if missing, otherwise increment wrong
   UPDATED=$(jq --arg d "$DOMAIN" --arg ts "$TIMESTAMP" '
     .last_updated = $ts |
     .total_events += 1 |

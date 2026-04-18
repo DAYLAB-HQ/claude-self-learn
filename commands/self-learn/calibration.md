@@ -1,6 +1,6 @@
 ---
 name: self-learn:calibration
-description: "Per-domain accuracy dashboard + manual calibration.json adjustment. Use when user types /self-learn:calibration, 'calibration', 'accuracy', '캘리브레이션', '정확도'"
+description: "Per-domain accuracy dashboard + manual calibration.json adjustment. Use when user types /self-learn:calibration, 'calibration', or 'accuracy'"
 ---
 
 Base directory for this skill: ~/.claude/skills/self-learn

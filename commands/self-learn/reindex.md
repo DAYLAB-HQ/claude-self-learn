@@ -1,6 +1,6 @@
 ---
 name: self-learn:reindex
-description: "Rebuild memory_index.json from existing memory files — speeds up session-start preloading at scale. Use when user types /self-learn:reindex, 'reindex memory', '메모리 인덱스 재생성'"
+description: "Rebuild memory_index.json from existing memory files — speeds up session-start preloading at scale. Use when user types /self-learn:reindex or 'reindex memory'"
 ---
 
 Base directory for this skill: ~/.claude/skills/self-learn

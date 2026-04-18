@@ -1,9 +1,9 @@
 #!/bin/bash
-# error-auto-matcher.sh — 빌드/런타임 에러 감지 시 기존 해법 자동 검색
+# error-auto-matcher.sh — Match build/runtime errors against previous troubleshoot memories
 #
-# PostToolUse(Bash) 이벤트에서 실행.
-# exit code ≠ 0이면 stderr에서 에러 키워드를 추출하고
-# troubleshoot_*.md에서 매칭되는 해법을 찾아 Claude에게 주입.
+# Runs on PostToolUse(Bash). When a command exits with a non-zero code,
+# extracts error keywords from stderr/stdout and searches troubleshoot_*.md
+# files for matching prior solutions. If any are found, surfaces them to Claude.
 
 INPUT=$(cat)
 EXIT_CODE=$(echo "$INPUT" | jq -r '.tool_result.exit_code // 0' 2>/dev/null)
@@ -11,17 +11,17 @@ STDOUT=$(echo "$INPUT" | jq -r '.tool_result.stdout // empty' 2>/dev/null)
 STDERR=$(echo "$INPUT" | jq -r '.tool_result.stderr // empty' 2>/dev/null)
 COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null)
 
-# exit 0이면 무시 (detect-commit.sh가 처리)
+# Ignore successful commands (detect-commit.sh handles those)
 [ "$EXIT_CODE" = "0" ] && exit 0
 [ "$EXIT_CODE" = "null" ] && exit 0
 
 MEMORY_DIR="$HOME/.claude/memory"
 ERROR_TEXT="$STDERR $STDOUT"
 
-# 에러 텍스트가 너무 짧으면 무시
+# Skip if the error text is too short to be meaningful
 [ ${#ERROR_TEXT} -lt 20 ] && exit 0
 
-# 에러 키워드 추출 (흔한 에러 패턴)
+# Extract error keywords (common patterns)
 KEYWORDS=""
 
 # TypeScript/JavaScript
@@ -44,10 +44,10 @@ echo "$ERROR_TEXT" | grep -qiE "turbo|turborepo" && KEYWORDS="$KEYWORDS turbo"
 echo "$ERROR_TEXT" | grep -qiE "xcodebuild|pod install|CocoaPods" && KEYWORDS="$KEYWORDS ios xcode"
 echo "$ERROR_TEXT" | grep -qiE "gradle|android" && KEYWORDS="$KEYWORDS android"
 
-# 키워드 없으면 종료
+# Nothing matched? Skip silently.
 [ -z "$KEYWORDS" ] && exit 0
 
-# troubleshoot 메모리에서 매칭 검색
+# Search troubleshoot memories for matching keywords
 MATCHES=""
 MATCH_COUNT=0
 
@@ -57,7 +57,7 @@ for f in "$MEMORY_DIR"/troubleshoot_*.md; do
     if grep -qil "$kw" "$f" 2>/dev/null; then
       fname=$(basename "$f" .md)
       desc=$(grep "^description:" "$f" 2>/dev/null | head -1 | sed 's/description: *//')
-      # 중복 방지
+      # Dedup
       echo "$MATCHES" | grep -q "$fname" || {
         MATCHES="$MATCHES\n  - $fname: $desc"
         MATCH_COUNT=$((MATCH_COUNT + 1))
@@ -69,11 +69,11 @@ done
 
 if [ $MATCH_COUNT -gt 0 ]; then
   cat <<EOF
-[self-improvement] 에러 감지 — 기존 해법 ${MATCH_COUNT}개 매칭됨.
-키워드: $KEYWORDS
-매칭된 메모리:$(echo -e "$MATCHES")
+[self-improvement] Error detected — ${MATCH_COUNT} prior solution(s) match.
+Keywords: $KEYWORDS
+Matched memories:$(echo -e "$MATCHES")
 
-위 메모리 파일을 읽고 이전 해결법을 먼저 시도하세요.
+Read the memory files above and try the previous solution(s) first.
 EOF
 fi
 

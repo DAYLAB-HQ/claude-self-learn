@@ -1,106 +1,110 @@
 # Memory-First Workflow
 
-**애매하거나 짧은 유저 요청에 바로 되묻기 전에 반드시 메모리 먼저 확인.**
+**Before replying to a vague or short user request, check memory first.**
 
-유저가 이전에 저장한 선호·맥락을 다시 설명하지 않아도 되게 강제한다.
+This keeps the user from having to repeat context they already stored.
 
-## 검색 워크플로우 (경량)
+## Retrieval workflow (lean)
 
-메모리 디렉토리: `~/.claude/memory/*.md`
+Memory directory: `~/.claude/memory/*.md`
 
-**검색 순서** (빠른 것부터):
+**Lookup order** (fastest first):
 
-1. **Glob으로 파일명 스캔**
+1. **Glob for filenames**
    ```
    Glob pattern: ~/.claude/memory/*.md
    ```
-   또는 타입으로 필터:
+   Or filter by type:
    ```
    Glob: ~/.claude/memory/feedback_*.md
    Glob: ~/.claude/memory/pattern_*.md
    ```
 
-2. **Grep으로 본문 검색** (필요 시)
+2. **Grep the body** (when filenames alone aren't enough)
    ```
-   Grep: "톤" in ~/.claude/memory/
-   Grep: "네이밍|이름" in ~/.claude/memory/feedback_*.md
+   Grep: "tone" in ~/.claude/memory/
+   Grep: "naming|name" in ~/.claude/memory/feedback_*.md
    ```
 
-3. **관련 파일 Read**
-   - 매칭된 파일 중 가장 관련 있어 보이는 것 1-3개 Read
-   - 내용 파악 후 답변 생성
+3. **Read the relevant files**
+   - Read 1–3 of the strongest matches
+   - Incorporate their content into the reply
 
-## 트리거 — 이런 요청엔 반드시 메모리 먼저
+## Triggers — when you MUST check memory first
 
-### 1. 톤·문체·카피 관련
-키워드: `톤`, `카피`, `문체`, `voice`, `tone`, `writing`, `스타일`, `표현`
-→ `feedback_*tone*`, `feedback_*voice*`, `feedback_oss_friendly_tone.md` 등
+### 1. Tone / voice / writing style
+Keywords: `tone`, `voice`, `writing`, `style`, `copy`, `wording`
+→ `feedback_*tone*`, `feedback_*voice*`, etc.
 
-### 2. 네이밍·제품명
-키워드: `이름`, `네이밍`, `naming`, `product name`, `브랜드`
-→ `feedback_intuitive_naming.md`, `project_*`
+### 2. Naming / product names
+Keywords: `name`, `naming`, `product name`, `brand`
+→ `feedback_*naming*`, `project_*`
 
-### 3. 기술 구현 (스택 언급 시)
-키워드: `expo`, `nextjs`, `prisma`, `react-native`, `vercel`, `tailwind` 등
+### 3. Technical implementation (stack mentioned)
+Keywords: `expo`, `nextjs`, `prisma`, `react-native`, `vercel`, `tailwind`, etc.
 → `pattern_*<stack>*`, `troubleshoot_*<stack>*`, `reference_*<stack>*`
 
-### 4. 과거 작업 참조
-키워드: `지난번`, `전에`, `예전에`, `어떻게 했지`, `이전에`, `before`, `last time`
-→ 주제 키워드 grep → `reference_*`, `pattern_*`
+### 4. Past work reference
+Keywords: `last time`, `before`, `previously`, `how did I`, `remember when`
+→ Grep the topic keyword → `reference_*`, `pattern_*`
 
-### 5. 프로덕트·사업·특정 프로젝트명
-키워드: 프로젝트 슬러그 또는 비즈니스 도메인 용어
+### 5. Specific product / project names
+Keywords: project slugs or business-specific domain terms
 → `project_<slug>.md`, `user_*.md`
 
-### 6. 애매한 요청 일반
-한 줄짜리, 맥락 부족한 질문 → **되묻기 전** Glob `~/.claude/memory/*.md` + 키워드 Grep
-- 관련 메모리 발견 → 그 맥락으로 답 시작
-- 여전히 애매 → **"기억한 맥락 기반 선택지"** 제시
+### 6. Any vague request
+Single-line or context-light prompts — **before asking for clarification**,
+Glob `~/.claude/memory/*.md` + Grep the likely keyword.
+- If something relevant turns up, start the reply from that context.
+- If it's still ambiguous after checking, ask a clarifying question that
+  is **grounded in the memory you found** (e.g. "I see three tone memories —
+  OSS / social / UX writing — which one is this for?").
 
-## 금지 행동
+## Forbidden behavior
 
-- ❌ 애매한 요청에 아무 확인 없이 "어떤 X 말씀이신가요?" 되묻기
-- ❌ 유저가 이전에 저장한 선호를 다시 물어보기
-- ❌ MEMORY_INDEX.md 찾기 (경량 모드에서는 존재하지 않음 — Glob 사용)
+- ❌ Replying to a vague request with "What do you mean by X?" with no memory check
+- ❌ Re-asking the user for a preference they already stored
+- ❌ Looking for `MEMORY_INDEX.md` (lean mode doesn't generate it — use Glob)
 
-## 답변 시 표시
+## Showing your sources
 
-관련 메모리 Read해서 답에 반영했으면:
+When you used a memory to shape the reply, add a source footer:
 ```
-(참조: feedback_oss_friendly_tone.md)
+(source: feedback_oss_friendly_tone.md)
 ```
-또는 여러 개면:
+Or for multiple:
 ```
-(참조: feedback_oss_friendly_tone.md, pattern_github_noreply_identity_mask.md)
-```
-
-## 예시
-
-### ❌ 나쁨
-```
-유저: 톤 좀 봐줘
-Claude: 어떤 톤을 봐드릴까요? 카피/이메일/UI 문구 등...
+(sources: feedback_oss_friendly_tone.md, pattern_github_noreply_identity_mask.md)
 ```
 
-### ✅ 좋음
+## Example
+
+### ❌ Not good
 ```
-유저: 톤 좀 봐줘
+User: Can you review the tone?
+Claude: Sure — which tone do you want me to review? Paste the text.
+```
+
+### ✅ Good
+```
+User: Can you review the tone?
 Claude: [Glob ~/.claude/memory/feedback_*tone*.md]
-       [Read feedback_oss_friendly_tone.md]
-       어떤 문서의 톤을 봐드릴까요? 기억하기론 공개 문서에
-       친절한 앞서 안내 스타일 선호하시고 방어적 표현 피하시는데,
-       그 기준으로 체크해드릴까요? 파일 경로 주세요.
-       (참조: feedback_oss_friendly_tone.md)
+        [Read feedback_oss_friendly_tone.md]
+        I remember you prefer a warm, upfront tone for public docs
+        (no defensive phrasing). Is this for a public-facing doc,
+        or something else (sales copy, social post, etc.)?
+        Paste the path/content and I'll check it against that standard.
+        (source: feedback_oss_friendly_tone.md)
 ```
 
-## 적용 범위
+## Scope
 
-- 이 rule은 `~/.claude/rules/`에 있어서 모든 세션에 자동 로드됨
-- 모든 프로젝트·모든 작업에 적용
-- 실행 시점: 유저 메시지 받자마자, 첫 응답 생성 전
+- This rule lives in `~/.claude/rules/` so it loads for every session.
+- Applies to all projects and all tasks.
+- Activates the moment a user message arrives, before the first reply tokens.
 
-## 퍼포먼스
+## Performance note
 
-- Glob 1회 + Read 1-3개 = 매 recall당 ~500~2000 토큰
-- 불필요한 grep 반복 금지 (한 번 검색으로 충분할 때)
-- 동일 메모리 재주제면 이미 context에 있는지 먼저 확인
+- One Glob + 1–3 Reads per recall = roughly 500–2000 tokens.
+- Don't repeat the same search — if a memory is already in the conversation
+  context, reuse it instead of re-reading.

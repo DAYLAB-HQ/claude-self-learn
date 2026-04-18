@@ -35,7 +35,7 @@ Without self-learn: Claude asks "what tone? paste the text."
 With self-learn: Claude `Glob`s `~/.claude/memory/feedback_*tone*.md`, `Read`s matches, and replies:
 
 > "I remember you prefer a friendly, upfront tone for public docs (no defensive phrasing). Should I use that standard? Paste the path/content."
-> (참조: feedback_oss_friendly_tone.md)
+> (source: feedback_oss_friendly_tone.md)
 
 Works for anything you've stored opinions/patterns/solutions on — you never have to say "check memory."
 

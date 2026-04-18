@@ -1,6 +1,6 @@
 ---
 name: self-learn:stats
-description: "Dashboard of accumulation stats — learning count, category distribution, per-project breakdown. Use when user types /self-learn:stats, 'stats', 'dashboard', '학습 현황', '메모리 현황'"
+description: "Dashboard of accumulation stats — learning count, category distribution, per-project breakdown. Use when user types /self-learn:stats, 'stats', or 'dashboard'"
 ---
 
 Base directory for this skill: ~/.claude/skills/self-learn
